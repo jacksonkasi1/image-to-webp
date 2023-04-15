@@ -24,7 +24,7 @@ traverseFolder(inputFolderPath);
 
 function traverseFolder(
   folderPath,
-  totalFilesCount = { image: 0 },
+  totalFilesCount = { image: 0, other: 0 },
   convertedFilesCount = { webp: 0 }
 ) {
   const files = fs.readdirSync(folderPath);
@@ -46,44 +46,70 @@ function traverseFolder(
 
       // Recursively traverse the subfolder
       traverseFolder(filePath, totalFilesCount, convertedFilesCount);
-    } else if (imageExtensions.includes(path.extname(file))) {
-      // Increment the total count of images
-      totalFilesCount.image++;
+    } else {
+      const extname = path.extname(file);
+      if (imageExtensions.includes(extname)) {
+        // Increment the total count of images
+        totalFilesCount.image++;
 
-      // Convert the image to WebP format and save it in the corresponding subfolder of the output folder
-      const subfolderPath = path.join(
-        outputFolderPath,
-        path.relative(inputFolderPath, folderPath)
-      );
-
-      //   const outputFilePath = path.join(
-      //     subfolderPath,
-      //     file.replace(/\.(png|jpg|jpeg|gif)$/, ".webp")
-      //   );
-      const outputFilePath = path.join(
-        subfolderPath,
-        file.replace(
-          new RegExp(`(${imageExtensions.join("|")})$`, "i"),
-          ".webp"
-        )
-      );
-
-      sharp(filePath)
-        .webp()
-        .toFile(outputFilePath)
-        .then(() => {
-          // Increment the count of converted files and log the percentage of completion
-          convertedFilesCount.webp++;
-          const percentage = Math.round(
-            (convertedFilesCount.webp / totalFilesCount.image) * 100
-          );
-          console.log(
-            `Converted ${path.basename(outputFilePath)} (${percentage}%)`
-          );
-        })
-        .catch((err) =>
-          console.error(`Error converting ${filePath} to WebP:`, err)
+        // Convert the image to WebP format and save it in the corresponding subfolder of the output folder
+        const subfolderPath = path.join(
+          outputFolderPath,
+          path.relative(inputFolderPath, folderPath)
         );
+
+        const outputFilePath = path.join(
+          subfolderPath,
+          file.replace(
+            new RegExp(`(${imageExtensions.join("|")})$`, "i"),
+            ".webp"
+          )
+        );
+
+        sharp(filePath)
+          .webp()
+          .toFile(outputFilePath)
+          .then(() => {
+            // Increment the count of converted files and log the percentage of completion
+            convertedFilesCount.webp++;
+            const percentage = Math.round(
+              (convertedFilesCount.webp / totalFilesCount.image) * 100
+            );
+            console.log(
+              `Converted ${path.basename(outputFilePath)} (${percentage}%)`
+            );
+          })
+          .catch((err) =>
+            console.error(`Error converting ${filePath} to WebP:`, err)
+          );
+      } else {
+        // Increment the total count of non-image files
+        totalFilesCount.other++;
+
+        // Copy the file to the corresponding subfolder of the output folder
+        const subfolderPath = path.join(
+          outputFolderPath,
+          path.relative(inputFolderPath, folderPath)
+        );
+
+        const outputFilePath = path.join(subfolderPath, file);
+
+        fs.copyFile(filePath, outputFilePath, (err) => {
+          if (err) {
+            console.error(`Error copying ${filePath} to ${outputFilePath}:`, err);
+          } else {
+            console.log(`Copied ${path.basename(outputFilePath)}`);
+          // Increment the count of converted files and log the percentage of completion
+            convertedFilesCount.other++;
+            const percentage = Math.round(
+              (convertedFilesCount.other / totalFilesCount.other) * 100
+            );
+            console.log(
+              `Converted ${path.basename(outputFilePath)} (${percentage}%)`
+            );
+          }
+        });
+      }
     }
   }
 }
