@@ -1,26 +1,27 @@
-const fs = require("fs");
+const fs = require("fs").promises;
 const path = require("path");
 
-const deleteFolderPath = "D:/WORKSPACE/HACKTHON/ImagetoWebp/output";
+const deleteFolderPath = "D:/WORKSPACE/HACKTHON/ImagetoWebp/caseStudy";
 
 // Delete folder function
-function deleteFolder(folderPath) {
-  if (fs.existsSync(folderPath)) {
-    fs.readdirSync(folderPath).forEach((file) => {
+async function deleteFolder(folderPath) {
+  try {
+    const files = await fs.readdir(folderPath);
+    for (const file of files) {
       const curPath = path.join(folderPath, file);
-      if (fs.lstatSync(curPath).isDirectory()) {
+      if ((await fs.stat(curPath)).isDirectory()) {
         // Recursive call for subdirectories
-        deleteFolder(curPath);
+        await deleteFolder(curPath);
       } else {
         // Delete file
-        fs.unlinkSync(curPath);
+        await fs.unlink(curPath);
       }
-    });
+    }
     // Delete folder after all files and subfolders have been deleted
-    fs.rmdirSync(folderPath);
+    await fs.rmdir(folderPath);
     console.log(`Folder ${folderPath} deleted successfully.`);
-  } else {
-    console.log(`Folder ${folderPath} does not exist.`);
+  } catch (err) {
+    console.error(`Error deleting folder ${folderPath}: ${err.message}`);
   }
 }
 
