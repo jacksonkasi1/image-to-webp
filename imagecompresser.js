@@ -2,32 +2,32 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 
-const inputFolderPath = "D:/WORKSPACE/HACKTHON/ImagetoWebp/caseStudy"; // input folder path
-const imageExtensions = [".png", ".jpg", ".jpeg", ".gif"]; // image extensions to convert
+const inputFolderPath = "C:/Users/jacks/Videos/Gizmo-input"; // input folder path
+const imageExtensions = [".png", ".jpg", ".jpeg", ".gif"]; // image extensions to compress
 
-const imageConvertTO = "webp"; // image type to convert to. support only [ heic, heif, avif, jpeg, jpg, jpe, tile, dz, png, raw, tiff, tif, webp, gif, jp2, jpx, j2k, j2c, jxl  ]
+const compressQuality = 1; // compression quality, range: 1-100, higher value means higher quality and larger file size
 
-// get final word  path inputFolderPath = caseStudy
+// get final word  path inputFolderPath = Gizmo-input
 const folderName = path.basename(inputFolderPath);
 
-let outputFolderPath = "D:/WORKSPACE/HACKTHON/ImagetoWebp/output"; // output folder path
+let outputFolderPath = "C:/Users/jacks/Videos/Gizmo-output"; // output folder path
 
 outputFolderPath = outputFolderPath + "/" + folderName;
 
-console.log(`Converting images in ${inputFolderPath} to WebP...`);
+console.log(`Compressing images in ${inputFolderPath}...`);
 
 // Create "output" folder if it doesn't exist
 if (!fs.existsSync(outputFolderPath)) {
   fs.mkdirSync(outputFolderPath, { recursive: true });
 }
 
-// Traverse the input folder recursively and convert all images with specified extensions to WebP format
+// Traverse the input folder recursively and compress all images with specified extensions
 traverseFolder(inputFolderPath);
 
 function traverseFolder(
   folderPath,
   totalFilesCount = { image: 0, other: 0 },
-  convertedFilesCount = { webp: 0 }
+  compressedFilesCount = { image: 0 }
 ) {
   const files = fs.readdirSync(folderPath);
 
@@ -47,14 +47,14 @@ function traverseFolder(
       }
 
       // Recursively traverse the subfolder
-      traverseFolder(filePath, totalFilesCount, convertedFilesCount);
+      traverseFolder(filePath, totalFilesCount, compressedFilesCount);
     } else {
       const extname = path.extname(file);
       if (imageExtensions.includes(extname)) {
         // Increment the total count of images
         totalFilesCount.image++;
 
-        // Convert the image to WebP format and save it in the corresponding subfolder of the output folder
+        // Compress the image with the same format and save it in the corresponding subfolder of the output folder
         const subfolderPath = path.join(
           outputFolderPath,
           path.relative(inputFolderPath, folderPath)
@@ -62,27 +62,25 @@ function traverseFolder(
 
         const outputFilePath = path.join(
           subfolderPath,
-          file.replace(
-            new RegExp(`(${imageExtensions.join("|")})$`, "i"),
-            `.${imageConvertTO}`
-          )
+          file
         );
 
         sharp(filePath)
-          .toFormat(imageConvertTO)
+          .jpeg({ quality: compressQuality })
+          .png({ quality: compressQuality })
           .toFile(outputFilePath)
           .then(() => {
-            // Increment the count of converted files and log the percentage of completion
-            convertedFilesCount.webp++;
+            // Increment the count of compressed files and log the percentage of completion
+            compressedFilesCount.image++;
             const percentage = Math.round(
-              (convertedFilesCount.webp / totalFilesCount.image) * 100
+              (compressedFilesCount.image / totalFilesCount.image) * 100
             );
             console.log(
-              `Converted ${path.basename(outputFilePath)} (${percentage}%)`
+              `Compressed ${path.basename(outputFilePath)} (${percentage}%)`
             );
           })
           .catch((err) =>
-            console.error(`Error converting ${filePath} to WebP:`, err)
+            console.error(`Error compressing ${filePath}:`, err)
           );
       } else {
         // Increment the total count of non-image files
@@ -99,16 +97,6 @@ function traverseFolder(
         fs.copyFile(filePath, outputFilePath, (err) => {
           if (err) {
             console.error(`Error copying ${filePath} to ${outputFilePath}:`, err);
-          } else {
-            console.log(`Copied ${path.basename(outputFilePath)}`);
-          // Increment the count of converted files and log the percentage of completion
-            convertedFilesCount.other++;
-            const percentage = Math.round(
-              (convertedFilesCount.other / totalFilesCount.other) * 100
-            );
-            console.log(
-              `Converted ${path.basename(outputFilePath)} (${percentage}%)`
-            );
           }
         });
       }
