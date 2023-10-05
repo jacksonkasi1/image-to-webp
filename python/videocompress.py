@@ -35,7 +35,10 @@ for dirpath, dirnames, filenames in os.walk(input_folder_path):
                 os.makedirs(subfolder_path)
 
             input_file_path = os.path.join(dirpath, filename)
-            output_file_path = os.path.join(subfolder_path, os.path.splitext(filename)[0] + "." + video_convert_to)
+            output_file_path = os.path.join(
+                subfolder_path,
+                f"{os.path.splitext(filename)[0]}.{video_convert_to}",
+            )
 
             print(f"Converting {input_file_path} to {output_file_path}...")
 
